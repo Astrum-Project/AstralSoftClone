@@ -27,8 +27,16 @@ namespace Astrum
                 typeof(AstralSoftClone).GetMethod(nameof(Detour), BindingFlags.NonPublic | BindingFlags.Static).ToNewHarmonyMethod()
             );
 
-            _loadAvatarMethod = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_Boolean_") && mi.Name.Length < 31 && mi.GetParameters().Any(pi => pi.IsOptional) && XrefScanner.UsedBy(mi) // Scan each method
-                .Any(instance => instance.Type == XrefType.Method && instance.TryResolve() != null && instance.TryResolve().Name == "ReloadAvatarNetworkedRPC"));
+            _loadAvatarMethod = 
+                typeof(VRCPlayer).GetMethods()
+                .First(mi => 
+                    mi.Name.StartsWith("Method_Private_Void_Boolean_") 
+                    && mi.Name.Length < 31 
+                    && mi.GetParameters().Any(pi => pi.IsOptional) 
+                    && XrefScanner.UsedBy(mi) // Scan each method
+                        .Any(instance => instance.Type == XrefType.Method 
+                            && instance.TryResolve() != null 
+                            && instance.TryResolve().Name == "ReloadAvatarNetworkedRPC"));
         }
 
         public override void OnUpdate()
@@ -37,19 +45,20 @@ namespace Astrum
 
             if (Input.GetKeyDown(KeyCode.T))
             {
-                string target;
                 if (UserSelectionManager.field_Private_Static_UserSelectionManager_0.field_Private_APIUser_1 == null)
                 {
                     Log("Invalid Target");
                     return;
                 }
-                else target = UserSelectionManager.field_Private_Static_UserSelectionManager_0.field_Private_APIUser_1.id;
+                
+                string target = UserSelectionManager.field_Private_Static_UserSelectionManager_0.field_Private_APIUser_1.id;
 
                 AvatarDictCache = PlayerManager.prop_PlayerManager_0
                     .field_Private_List_1_Player_0
                     .ToArray()
                     .FirstOrDefault(a => a.field_Private_APIUser_0.id == target)
                     ?.prop_Player_1.field_Private_Hashtable_0["avatarDict"];
+
                 _loadAvatarMethod.Invoke(VRCPlayer.field_Internal_Static_VRCPlayer_0, new object[] { true });
             }
 
