@@ -9,7 +9,7 @@ using UnhollowerRuntimeLib.XrefScans;
 using VRC;
 
 [assembly: MelonGame("VRChat")]
-[assembly: MelonInfo(typeof(Astrum.AstralSoftClone), "AstralSoftClone", "0.1.0", downloadLink: "github.com/Astrum-Project/AstralSoftClone")]
+[assembly: MelonInfo(typeof(Astrum.AstralSoftClone), "AstralSoftClone", "0.2.0", downloadLink: "github.com/Astrum-Project/AstralSoftClone")]
 [assembly: MelonColor(System.ConsoleColor.DarkYellow)]
 
 namespace Astrum
