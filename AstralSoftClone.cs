@@ -5,6 +5,8 @@ using UnityEngine;
 using VRC.Core;
 using VRC.DataModel;
 using System.Linq;
+using UnhollowerRuntimeLib.XrefScans;
+using VRC;
 
 [assembly: MelonGame("VRChat")]
 [assembly: MelonInfo(typeof(Astrum.AstralSoftClone), "AstralSoftClone", "0.1.0", downloadLink: "github.com/Astrum-Project/AstralSoftClone")]
@@ -14,8 +16,9 @@ namespace Astrum
 {
     public class AstralSoftClone : MelonMod
     {
-        private static bool State = false;
-        private static Il2CppSystem.Object avatarDictCache { get; set; }
+        private static bool _state;
+        private static Il2CppSystem.Object AvatarDictCache { get; set; }
+        private static MethodInfo _loadAvatarMethod;
 
         public override void OnApplicationStart()
         {
@@ -23,6 +26,9 @@ namespace Astrum
                 typeof(VRCNetworkingClient).GetMethod(nameof(VRCNetworkingClient.OnEvent)),
                 typeof(AstralSoftClone).GetMethod(nameof(Detour), BindingFlags.NonPublic | BindingFlags.Static).ToNewHarmonyMethod()
             );
+
+            _loadAvatarMethod = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_Boolean_") && mi.Name.Length < 31 && mi.GetParameters().Any(pi => pi.IsOptional) && XrefScanner.UsedBy(mi) // Scan each method
+                .Any(instance => instance.Type == XrefType.Method && instance.TryResolve() != null && instance.TryResolve().Name == "ReloadAvatarNetworkedRPC"));
         }
 
         public override void OnUpdate()
@@ -31,7 +37,7 @@ namespace Astrum
 
             if (Input.GetKeyDown(KeyCode.T))
             {
-                string target = string.Empty;
+                string target;
                 if (UserSelectionManager.field_Private_Static_UserSelectionManager_0.field_Private_APIUser_1 == null)
                 {
                     Log("Invalid Target");
@@ -39,19 +45,19 @@ namespace Astrum
                 }
                 else target = UserSelectionManager.field_Private_Static_UserSelectionManager_0.field_Private_APIUser_1.id;
 
-                avatarDictCache = VRC.PlayerManager.prop_PlayerManager_0
+                AvatarDictCache = PlayerManager.prop_PlayerManager_0
                     .field_Private_List_1_Player_0
                     .ToArray()
-                    .Where(a => a.field_Private_APIUser_0.id == target)
-                    .FirstOrDefault()
-                    .prop_Player_1.field_Private_Hashtable_0["avatarDict"];
+                    .FirstOrDefault(a => a.field_Private_APIUser_0.id == target)
+                    ?.prop_Player_1.field_Private_Hashtable_0["avatarDict"];
+                _loadAvatarMethod.Invoke(VRCPlayer.field_Internal_Static_VRCPlayer_0, new object[] { true });
             }
 
             if (Input.GetKeyDown(KeyCode.A))
             {
-                State ^= true;
+                _state ^= true;
 
-                Log("SoftClone " + (State ? "On" : "Off"));
+                Log("SoftClone " + (_state ? "On" : "Off"));
             }
         }
 
@@ -63,11 +69,11 @@ namespace Astrum
 
         private static void Detour(ref EventData __0)
         {
-            if (State
+            if (_state
                 && __0.Code == 253
-                && avatarDictCache != null
-                && __0.Sender == VRC.Player.prop_Player_0.field_Private_VRCPlayerApi_0.playerId
-            ) __0.Parameters[251].Cast<Il2CppSystem.Collections.Hashtable>()["avatarDict"] = avatarDictCache;
+                && AvatarDictCache != null
+                && __0.Sender == Player.prop_Player_0.field_Private_VRCPlayerApi_0.playerId
+            ) __0.Parameters[251].Cast<Il2CppSystem.Collections.Hashtable>()["avatarDict"] = AvatarDictCache;
         }
     }
 }
