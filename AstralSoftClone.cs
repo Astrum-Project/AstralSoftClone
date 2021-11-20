@@ -9,14 +9,16 @@ using UnhollowerRuntimeLib.XrefScans;
 using VRC;
 
 [assembly: MelonGame("VRChat")]
-[assembly: MelonInfo(typeof(Astrum.AstralSoftClone), "AstralSoftClone", "0.2.0", downloadLink: "github.com/Astrum-Project/AstralSoftClone")]
+[assembly: MelonInfo(typeof(Astrum.AstralSoftClone), nameof(Astrum.AstralSoftClone), "0.2.1", downloadLink: "github.com/Astrum-Project/" + nameof(Astrum.AstralSoftClone))]
 [assembly: MelonColor(System.ConsoleColor.DarkYellow)]
+[assembly: MelonOptionalDependencies("AstralCore")]
 
 namespace Astrum
 {
     public class AstralSoftClone : MelonMod
     {
-        private static bool _state;
+        private static bool _state = false;
+        private static bool hasCore = false;
         private static Il2CppSystem.Object AvatarDictCache { get; set; }
         private static MethodInfo _loadAvatarMethod;
 
@@ -37,6 +39,9 @@ namespace Astrum
                         .Any(instance => instance.Type == XrefType.Method 
                             && instance.TryResolve() != null 
                             && instance.TryResolve().Name == "ReloadAvatarNetworkedRPC"));
+
+            if (System.AppDomain.CurrentDomain.GetAssemblies().Any(x => x.GetName().Name == "AstralCore"))
+                hasCore = true;
         }
 
         public override void OnUpdate()
@@ -72,8 +77,12 @@ namespace Astrum
 
         private static void Log(string message)
         {
-            VRCUiManager.prop_VRCUiManager_0.field_Private_List_1_String_0.Add(message);
-            MelonLogger.Msg(message);
+            if (!hasCore)
+            {
+                VRCUiManager.prop_VRCUiManager_0.field_Private_List_1_String_0.Add(message);
+                MelonLogger.Msg(message);
+            }
+            else Extern.Notif(message);
         }
 
         private static void Detour(ref EventData __0)
@@ -83,6 +92,11 @@ namespace Astrum
                 && AvatarDictCache != null
                 && __0.Sender == Player.prop_Player_0.field_Private_VRCPlayerApi_0.playerId
             ) __0.Parameters[251].Cast<Il2CppSystem.Collections.Hashtable>()["avatarDict"] = AvatarDictCache;
+        }
+
+        internal class Extern
+        {
+            public static void Notif(string message) => AstralCore.Logger.Notif(message);
         }
     }
 }
