@@ -9,7 +9,7 @@ using UnhollowerRuntimeLib.XrefScans;
 using VRC;
 
 [assembly: MelonGame("VRChat")]
-[assembly: MelonInfo(typeof(Astrum.AstralSoftClone), nameof(Astrum.AstralSoftClone), "0.2.1", downloadLink: "github.com/Astrum-Project/" + nameof(Astrum.AstralSoftClone))]
+[assembly: MelonInfo(typeof(Astrum.AstralSoftClone), nameof(Astrum.AstralSoftClone), "0.2.2", downloadLink: "github.com/Astrum-Project/" + nameof(Astrum.AstralSoftClone))]
 [assembly: MelonColor(System.ConsoleColor.DarkYellow)]
 [assembly: MelonOptionalDependencies("AstralCore")]
 
@@ -29,15 +29,15 @@ namespace Astrum
                 typeof(AstralSoftClone).GetMethod(nameof(Detour), BindingFlags.NonPublic | BindingFlags.Static).ToNewHarmonyMethod()
             );
 
-            _loadAvatarMethod = 
+            _loadAvatarMethod =
                 typeof(VRCPlayer).GetMethods()
-                .First(mi => 
-                    mi.Name.StartsWith("Method_Private_Void_Boolean_") 
-                    && mi.Name.Length < 31 
-                    && mi.GetParameters().Any(pi => pi.IsOptional) 
+                .First(mi =>
+                    mi.Name.StartsWith("Method_Private_Void_Boolean_")
+                    && mi.Name.Length < 31
+                    && mi.GetParameters().Any(pi => pi.IsOptional)
                     && XrefScanner.UsedBy(mi) // Scan each method
-                        .Any(instance => instance.Type == XrefType.Method 
-                            && instance.TryResolve() != null 
+                        .Any(instance => instance.Type == XrefType.Method
+                            && instance.TryResolve() != null
                             && instance.TryResolve().Name == "ReloadAvatarNetworkedRPC"));
 
             if (System.AppDomain.CurrentDomain.GetAssemblies().Any(x => x.GetName().Name == "AstralCore"))
@@ -55,7 +55,7 @@ namespace Astrum
                     Log("Invalid Target");
                     return;
                 }
-                
+
                 string target = UserSelectionManager.field_Private_Static_UserSelectionManager_0.field_Private_APIUser_1.id;
 
                 AvatarDictCache = PlayerManager.prop_PlayerManager_0
@@ -88,10 +88,10 @@ namespace Astrum
         private static void Detour(ref EventData __0)
         {
             if (_state
-                && __0.Code == 253
+                && __0.Code == 42
                 && AvatarDictCache != null
                 && __0.Sender == Player.prop_Player_0.field_Private_VRCPlayerApi_0.playerId
-            ) __0.Parameters[251].Cast<Il2CppSystem.Collections.Hashtable>()["avatarDict"] = AvatarDictCache;
+            ) __0.Parameters.paramDict[245].Cast<Il2CppSystem.Collections.Hashtable>()["avatarDict"] = AvatarDictCache;
         }
 
         internal class Extern
